@@ -168,6 +168,9 @@ enum
   PROP_DROP_NO_SIGNAL_FRAMES,
   PROP_SIGNAL,
   PROP_HW_SERIAL_NUMBER,
+  PROP_PERSISTENT_ID,
+  PROP_PAIR_DEVICE_PERSISTENT_ID,
+  PROP_PAIR_IS_MASTER,
   PROP_OUTPUT_CC
 };
 
@@ -350,6 +353,29 @@ gst_decklink_video_src_class_init (GstDecklinkVideoSrcClass * klass)
           "The serial number (hardware ID) of the Decklink card",
           NULL, (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
 
+  g_object_class_install_property (gobject_class, PROP_PERSISTENT_ID,
+      g_param_spec_int64 ("persistent-id", "Persistent ID",
+          "A device specific 32 bit unique identifier or 0, if a persistent-id"
+          "is not available for this card.",
+          G_MININT64, G_MAXINT64, 0,
+          (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+
+  g_object_class_install_property (gobject_class,
+      PROP_PAIR_DEVICE_PERSISTENT_ID,
+      g_param_spec_int64 ("pair-device-persistent-id",
+          "Persistent-ID of paired sub-device",
+          "The device specific 32 bit unique identifier of the paired"
+          "sub-device (If the DeckLink device has paired sub-devices"
+          "- e.g. the DeckLink Quad 2), otherwise 0.", G_MININT64, G_MAXINT64,
+          0, (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+
+  g_object_class_install_property (gobject_class, PROP_PAIR_IS_MASTER,
+      g_param_spec_boolean ("pair-device-is-master",
+          "Whether this sub-device is the Master of a Pair",
+          "Whether this sub-device is the Master of a Pair and can be used"
+          "with duplex-mode=full.", FALSE,
+          (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+
   g_object_class_install_property (gobject_class, PROP_OUTPUT_CC,
       g_param_spec_boolean ("output-cc", "Output Closed Caption",
           "Extract and output CC as GstMeta (if present)",
@@ -522,6 +548,24 @@ gst_decklink_video_src_get_property (GObject * object, guint property_id,
         g_value_set_string (value, self->input->hw_serial_number);
       else
         g_value_set_string (value, NULL);
+      break;
+    case PROP_PERSISTENT_ID:
+      if (self->input)
+        g_value_set_int64 (value, self->input->persistent_id);
+      else
+        g_value_set_int64 (value, 0);
+      break;
+    case PROP_PAIR_DEVICE_PERSISTENT_ID:
+      if (self->input)
+        g_value_set_int64 (value, self->input->pair_device_persistent_id);
+      else
+        g_value_set_int64 (value, 0);
+      break;
+    case PROP_PAIR_IS_MASTER:
+      if (self->input)
+        g_value_set_boolean (value, self->input->pair_device_is_master);
+      else
+        g_value_set_boolean (value, FALSE);
       break;
     case PROP_OUTPUT_CC:
       g_value_set_boolean (value, self->output_cc);
@@ -1268,6 +1312,9 @@ gst_decklink_video_src_open (GstDecklinkVideoSrc * self)
   }
 
   g_object_notify (G_OBJECT (self), "hw-serial-number");
+  g_object_notify (G_OBJECT (self), "persistent-id");
+  g_object_notify (G_OBJECT (self), "pair-device-persistent-id");
+  g_object_notify (G_OBJECT (self), "pair-device-is-master");
 
   mode = gst_decklink_get_mode (self->mode);
   g_assert (mode != NULL);

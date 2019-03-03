@@ -1329,7 +1329,7 @@ init_devices (gpointer data)
         CONVERT_COM_STRING (serial_number);
         dev->output.hw_serial_number = g_strdup (serial_number);
         dev->input.hw_serial_number = g_strdup (serial_number);
-        GST_DEBUG ("device %d has serial number %s", i, serial_number);
+        GST_DEBUG ("device %d has serial number '%s'", i, serial_number);
         FREE_COM_STRING (serial_number);
       }
     }
@@ -1340,6 +1340,41 @@ init_devices (gpointer data)
     if (ret != S_OK) {
       GST_WARNING ("selected device does not have attributes interface: "
           "0x%08lx", (unsigned long) ret);
+    } else {
+
+
+      int64_t persistent_id;
+      ret =
+          dev->input.attributes->GetInt (BMDDeckLinkPersistentID,
+          &persistent_id);
+      if (ret == S_OK) {
+        dev->output.persistent_id = persistent_id;
+        dev->input.persistent_id = persistent_id;
+        GST_DEBUG ("device %d has persistent id %" G_GINT64_FORMAT, i,
+            persistent_id);
+      }
+
+      int64_t pair_device_persistent_id;
+      ret =
+          dev->input.attributes->GetInt (BMDDeckLinkPairedDevicePersistentID,
+          &pair_device_persistent_id);
+      if (ret == S_OK) {
+        dev->output.pair_device_persistent_id = pair_device_persistent_id;
+        dev->input.pair_device_persistent_id = pair_device_persistent_id;
+        GST_DEBUG ("device %d has pair-device persistent id %" G_GINT64_FORMAT,
+            i, pair_device_persistent_id);
+      }
+
+      bool pair_device_is_master;
+      ret =
+          dev->input.attributes->GetFlag (BMDDeckLinkSupportsFullDuplex,
+          &pair_device_is_master);
+      if (ret == S_OK) {
+        dev->output.pair_device_is_master = pair_device_is_master;
+        dev->input.pair_device_is_master = pair_device_is_master;
+        GST_DEBUG ("device %d is pair-device master? %d", i,
+            pair_device_is_master);
+      }
     }
 
     ret = decklink->QueryInterface (IID_IDeckLinkKeyer,

@@ -222,6 +222,9 @@ struct _GstDecklinkOutput {
   IDeckLinkKeyer *keyer;
 
   gchar *hw_serial_number;
+  int64_t persistent_id;
+  int64_t pair_device_persistent_id;
+  bool pair_device_is_master;
 
   GstClock *clock;
   GstClockTime clock_start_time, clock_last_time, clock_epoch;
@@ -252,6 +255,9 @@ struct _GstDecklinkInput {
   IDeckLinkAttributes *attributes;
 
   gchar *hw_serial_number;
+  int64_t persistent_id;
+  int64_t pair_device_persistent_id;
+  bool pair_device_is_master;
 
   /* Everything below protected by mutex */
   GMutex lock;
